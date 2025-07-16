@@ -2,9 +2,414 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <title>Document</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Calendar & Inbox</title>
+  <style>
+    @font-face {
+      font-family: "Geist Sans";
+      src: url("https://assets.codepen.io/605876/GeistVF.ttf") format("truetype");
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --aspect-ratio: 16 / 10;
+      --min-height: 5.5rem;
+      --gap: 1rem;
+      --frame: hsl(0 0% 25%);
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      background: black;
+      font-family: "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 80;
+      margin: 0;
+      padding: 0;
+      touch-action: manipulation;
+    }
+
+    .panels {
+      container-type: size;
+      width: min(90vmin, 100vw - 2rem);
+      aspect-ratio: var(--aspect-ratio);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      border-radius: 12px;
+      gap: var(--gap);
+      min-height: 300px;
+    }
+
+    .panel {
+      min-height: var(--min-height);
+      background: hsl(0 0% 98%);
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .panel:first-of-type {
+      position: relative;
+    }
+
+    .time {
+      grid-column: 1 / 2;
+      position: relative;
+    }
+
+    .event {
+      grid-column: span 7;
+      grid-row: span 2;
+    }
+
+    .resizer {
+      position: relative;
+      right: 50%;
+      bottom: 0;
+      height: 12rem;
+      width: 100%;
+      resize: vertical;
+      overflow: hidden;
+      min-height: var(--min-height);
+      max-height: calc(100cqh - (var(--gap) + var(--min-height)));
+      transform-origin: 100% 100%;
+      scale: 4 1;
+      translate: 28px 1.5rem;
+      background: green;
+      z-index: 9999;
+      clip-path: inset(calc(100% - 14px) 0 0 calc(100% - 14px));
+      opacity: 0;
+    }
+
+    /* Mobile touch-friendly resizer */
+    @media (hover: none) and (pointer: coarse) {
+      .resizer {
+        scale: 6 1.5;
+        translate: 42px 1.5rem;
+        clip-path: inset(calc(100% - 24px) 0 0 calc(100% - 24px));
+      }
+    }
+
+    .panel:first-of-type::before {
+      content: "";
+      position: absolute;
+      height: 48px;
+      width: 48px;
+      left: 50%;
+      bottom: 0;
+      background: red;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+      translate: -50% calc(50% + 1rem);
+      opacity: 0;
+    }
+
+    .panel:first-of-type::after {
+      content: "";
+      position: absolute;
+      width: 3rem;
+      height: 0.5rem;
+      bottom: 0%;
+      left: 50%;
+      background: hsl(0 0% 90%);
+      translate: -50% calc(1.5rem + -50%);
+      pointer-events: none;
+      border-radius: 4rem;
+      z-index: 3;
+    }
+
+    .calendar {
+      position: absolute;
+      inset: 0;
+      container-type: size;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .calendar header {
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      background: hsl(0 0% 100%);
+      z-index: 2;
+    }
+
+    header div:nth-of-type(3) {
+      color: hsl(10 80% 50%);
+    }
+
+    header div:nth-of-type(11) { 
+      position: relative; 
+      color: hsl(0 0% 100%); 
+    }
+
+    header div:nth-of-type(11)::after {
+      content: "";
+      background: hsl(10 80% 50%);
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 4px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      translate: -50% -50%;
+      z-index: -1;
+    }
+
+    .time::after {
+      content: "";
+      height: 1px;
+      width: 100cqi;
+      background: hsl(0 0% 80%);
+      position: absolute;
+      left: calc(0.5rem + 100%);
+      top: 50%;
+      z-index: -1;
+    }
+
+    .calendar header::after {
+      content: "";
+      position: absolute;
+      height: 1rem;
+      left: 0;
+      right: 0;
+      background: hsl(0 0% 100%);
+      top: 100%;
+      mask: linear-gradient(white, transparent);
+    }
+
+    .calendar header, .calendar__main {
+      display: grid;
+      grid-template-columns: auto repeat(7, 1fr);
+      justify-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .calendar__main {
+      padding: 1rem;
+      overflow-x: hidden;
+    }
+
+    .calendar :is(header, .calendar__main) {
+      display: none;
+    }
+
+    .calendar__next {
+      display: none;
+      position: absolute;
+      inset: 1rem;
+      background: hsl(220 80% 80%);
+      border: 1px solid hsl(220 80% 50%);
+      place-items: center;
+      text-align: center;
+      border-radius: 4px;
+      justify-content: center;
+      gap: 1rem;
+      grid-auto-flow: column;
+    }
+
+    .time, .calendar header {
+      color: hsl(0 0% 60%);
+    }
+
+    strong {
+      font-weight: 150;
+    }
+
+    @container (height < 6rem) {
+      .calendar .calendar__next {
+        display: grid;
+      }
+    }
+
+    @container (height > 6rem) {
+      .calendar :is(.calendar__main, header) {
+        display: grid;
+      }
+    }
+
+    .details {
+      grid-column: 2 / -1;
+      background: purple;
+      grid-row: 2 / 5;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid hsl(220 80% 50%);
+      background: hsl(220 80% 80%);
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .details.js {
+      grid-row: 6 /9;
+      border: 1px solid hsl(45 80% 50%);
+      background: hsl(45 80% 80%);
+    }
+
+    .inbox {
+      padding: 1rem;
+      overflow: auto;
+      height: 100%;
+      display: grid;
+      clip-path: inset(0 0 0 0 round 1rem);
+      align-content: start;
+      gap: 0.5rem;
+      container-type: size;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .inbox button {
+      font-size: 1.25rem;
+      font-weight: 100;
+      padding: 1rem;
+      border: 0;
+      background: hsl(0 0% 90%);
+      border-radius: 4px;
+      text-align: left;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      color: hsl(0 0% 50%);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      min-height: 44px; /* Minimum touch target size */
+    }
+
+    .inbox button:hover {
+      background: hsl(0 0% 85%);
+    }
+
+    .inbox button:active {
+      background: hsl(0 0% 80%);
+    }
+
+    button svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .inbox .total {
+      display: none;
+    }
+
+    @container (height < 6rem) {
+      .inbox .total {
+        display: flex;
+      }
+    }
+
+    @container (height > 6rem) {
+      .inbox button {
+        display: flex;
+      }
+    }
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+      :root {
+        --gap: 0.5rem;
+        --min-height: 4rem;
+      }
+
+      .panels {
+        width: 100vw;
+        height: 100vh;
+        aspect-ratio: unset;
+        border-radius: 0;
+        gap: var(--gap);
+      }
+
+      .panel {
+        border-radius: 0;
+      }
+
+      .calendar header, .calendar__main {
+        gap: 0.5rem;
+      }
+
+      .calendar header {
+        padding: 0.5rem;
+      }
+
+      .calendar__main {
+        padding: 0.5rem;
+      }
+
+      .inbox {
+        padding: 0.5rem;
+      }
+
+      .inbox button {
+        font-size: 1rem;
+        padding: 0.75rem;
+        min-height: 48px; /* Larger touch target for mobile */
+      }
+
+      .panel:first-of-type::after {
+        width: 4rem;
+        height: 0.75rem;
+      }
+    }
+
+    /* Orientation change handling */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .panels {
+        width: 100vw;
+        height: 100vh;
+        aspect-ratio: unset;
+      }
+    }
+
+    /* High DPI displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+      .panel:first-of-type::after {
+        height: 0.25rem;
+      }
+    }
+
+    /* Accessibility improvements */
+    @media (prefers-reduced-motion: reduce) {
+      .inbox button {
+        transition: none;
+      }
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      .panel {
+        background: hsl(0 0% 15%);
+      }
+      
+      .calendar header {
+        background: hsl(0 0% 15%);
+      }
+      
+      .inbox button {
+        background: hsl(0 0% 20%);
+        color: hsl(0 0% 80%);
+      }
+      
+      .inbox button:hover {
+        background: hsl(0 0% 25%);
+      }
+      
+      .time, .calendar header {
+        color: hsl(0 0% 60%);
+      }
+      
+      .time::after {
+        background: hsl(0 0% 30%);
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="panels">
@@ -29,7 +434,7 @@
           <div>12</div>
         </header>
         <div class="calendar__main">
-                  <div class="time">11:00</div>
+          <div class="time">11:00</div>
           <div class="details">
             1:1 CSS
           </div>
@@ -58,30 +463,27 @@
       <div class="inbox">
         <button>
           <span>Important (5)</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-  </svg>
-  
-          </button>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
         <button>
           <span>Unread (10)</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-  </svg>
-  
-          </button>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
         <button>
           <span>Everything Else (24)</span>
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-  </svg>
-  </button>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
         <button class="total">
           <span>Inbox (39)</span>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-  </svg>
-  
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
         </button>
       </div>
     </div>
