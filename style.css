@@ -1,0 +1,328 @@
+@font-face {
+  font-family: "Geist Sans";
+  src: url("https://assets.codepen.io/605876/GeistVF.ttf") format("truetype");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --aspect-ratio: 16 / 10;
+  --min-height: 5.5rem;
+  --gap: 2rem;
+  --frame: hsl(0 0% 25%);
+}
+
+body {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: black;
+  font-family: "Geist Sans", sans-serif;
+  font-weight: 80;
+}
+
+.panels {
+  container-type: size;
+  width: 90vmin;
+  aspect-ratio: var(--aspect-ratio);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border-radius: 12px;
+  gap: var(--gap);
+}
+
+.panel {
+  min-height: var(--min-height);
+}
+
+.panel:first-of-type {
+  position: relative;
+}
+
+
+.time {
+  grid-column: 1 / 2;
+}
+
+.event {
+  grid-column: span 7;
+  grid-row: span 2;
+}
+
+/* .resizer {
+  position: relative;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  resize: horizontal;
+  overflow: hidden;
+  max-width: calc(100cqi - 100px);
+  min-width: 100px;
+  transform-origin: 100% 100%;
+  scale: 40;
+  translate: 24px 0;
+  background: green;
+  clip-path: inset(0 0 0 calc(100% - 1px));
+} */
+
+.resizer {
+  position: relative;
+  right: 50%;
+  bottom: 0;
+  height: 12rem;
+  width: 100%;
+  resize: vertical;
+  overflow: hidden;
+  min-height: var(--min-height);
+  max-height: calc(100cqh - (var(--gap) + var(--min-height)));
+  transform-origin: 100% 100%;
+  scale: 4 1;
+  translate: 28px 1.5rem;
+  background: green;
+  z-index: 9999;
+  clip-path: inset(calc(100% - 14px) 0 0 calc(100% - 14px));
+  /* Important to hide it */
+  opacity: 0;
+}
+
+/* Purely used to debug the handle hit spot */
+/* .resizer::after {
+  content: "";
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: red;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+} */
+
+.panel:first-of-type::before {
+  content: "";
+  position: absolute;
+  height: 48px;
+  width: 48px;
+  left: 50%;
+  bottom: 0;
+  background: red;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  translate: -50% calc(50% + 1rem);
+  opacity: 0;
+}
+
+.panel:first-of-type::after {
+  content: "";
+  position: absolute;
+  width: 3rem;
+  height: 0.5rem;
+  bottom: 0%;
+  left: 50%;
+  background: hsl(0 0% 90%);
+  translate: -50% calc(1.5rem + -50%);
+  pointer-events: none;
+  border-radius: 4rem;
+  z-index: 3;
+}
+
+.panel {
+  background: hsl(0 0% 98%);
+  border-radius: 12px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+pre::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 50%);
+}
+pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  background: transparent;
+}
+
+.panel {
+  position: relative;
+}
+
+.calendar {
+/*   display: flex; */
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  overflow: auto;
+}
+
+.calendar header {
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  background: hsl(0 0% 100%);
+  z-index: 2;
+}
+
+.time {
+  position: relative;
+}
+
+header div:nth-of-type(3) {
+  color: hsl(10 80% 50%);
+}
+
+header div:nth-of-type(11) { position: relative; color: hsl(0 0% 100%); }
+
+header div:nth-of-type(11)::after {
+  content: "";
+  background: hsl(10 80% 50%);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 4px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: -1;
+}
+
+.time::after {
+  content: "";
+  height: 1px;
+  width: 100cqi;
+  background: hsl(0 0% 80%);
+  position: absolute;
+  left: calc(0.5rem + 100%);
+  top: 50%;
+  z-index: -1;
+}
+
+.calendar header::after {
+  content: "";
+  position: absolute;
+  height: 1rem;
+  left: 0;
+  right: 0;
+  background: hsl(0 0% 100%);
+  top: 100%;
+  mask: linear-gradient(white, transparent);
+}
+
+.calendar header, .calendar__main {
+  display: grid;
+  grid-template-columns: auto repeat(7, 1fr);
+  justify-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.calendar__main {
+  padding: 1rem;
+  overflow-x: hidden;
+}
+
+.calendar :is(header, .calendar__main) {
+  display: none;
+}
+
+.calendar__next {
+  display: none;
+  position: absolute;
+  inset: 1rem;
+  background: hsl(220 80% 80%);
+  border: 1px solid hsl(220 80% 50%);
+  place-items: center;
+  text-align: center;
+  border-radius: 4px;
+  justify-content: center;
+  gap: 1rem;
+  grid-auto-flow: column;
+}
+
+.time, .calendar header {
+  color: hsl(0 0% 60%);
+}
+
+strong {
+  font-weight: 150;
+}
+
+@container (height < 6rem) {
+  .calendar .calendar__next {
+    display: grid;
+  }
+}
+
+@container (height > 6rem) {
+  .calendar :is(.calendar__main, header) {
+    display: grid;
+  }
+}
+
+.details {
+  grid-column: 2 / -1;
+  background: purple;
+  grid-row: 2 / 5;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid hsl(220 80% 50%);
+  background: hsl(220 80% 80%);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.details.js {
+  grid-row: 6 /9;
+  border: 1px solid hsl(45 80% 50%);
+  background: hsl(45 80% 80%);
+}
+
+.inbox {
+  padding: 1rem;
+  overflow: auto;
+  height: 100%;
+  display: grid;
+  clip-path: inset(0 0 0 0 round 1rem);
+  align-content: start;
+  gap: 0.5rem;
+  container-type: size;
+}
+
+.inbox button {
+  font-size: 1.25rem;
+  font-weight: 100;
+  padding: 1rem;
+  border: 0;
+  background: hsl(0 0% 90%);
+  border-radius: 4px;
+  text-align: left;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  color: hsl(0 0% 50%);
+}
+
+button svg {
+  width: 24px;
+}
+
+.inbox .total {
+  display: none;
+}
+
+@container (height < 6rem) {
+  .inbox .total {
+    display: flex;
+  }
+}
+
+@container (height > 6rem) {
+  .inbox button {
+    display: flex;
+  }
+}
